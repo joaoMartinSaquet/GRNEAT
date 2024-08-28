@@ -7,7 +7,7 @@ import grn.GRNModel;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import java.util.concurrent.CountDownLatch;
-
+import java.util.concurrent.Semaphore;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.net.URI;
@@ -25,14 +25,15 @@ public class PongEvaluator extends GRNGenomeEvaluator {
 
     public static int numEvaluations = 0;
     private WebSocketClient cc;
-    private int numMaxEp = 5000;
+    private int numMaxEp = 6000;
     HashMap<String, String> resetCmd = new HashMap<>();
     HashMap<String, String> endCmd = new HashMap<>();
     HashMap<String, String> stepCmd = new HashMap<>();
-    private static CountDownLatch latch = new CountDownLatch(1);
+    private static Semaphore response = new Semaphore(0);
     private long seed = 1854784;
     private String reply;
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private boolean debug = true;
 
     public PongEvaluator() {
         numGRNInputs = 4;  // Obs = {px, py, bx, by} 
@@ -51,7 +52,7 @@ public class PongEvaluator extends GRNGenomeEvaluator {
         stepCmd.put("cmd", "step");
         stepCmd.put("args", "0");
 
-        System.out.println("reset cmd pas se,d: " + resetCmd);
+        // System.out.println("reset cmd pas send: " + resetCmd);
 
         try{
             // create connection 
@@ -66,13 +67,14 @@ public class PongEvaluator extends GRNGenomeEvaluator {
                 @Override
                 public void onMessage(String message) {
                     reply = message;
-                    // System.out.println("Received message: " + reply);
-                    latch.countDown();
+                    if (debug) {System.out.println("Received message: " + reply);}
+                    response.release();
                 }
 
                 @Override
                 public void onClose(int code, String reason, boolean remote) {
                     System.out.println("Connection closed: " + reason);
+                    
                 }
 
                 @Override
@@ -105,7 +107,7 @@ public class PongEvaluator extends GRNGenomeEvaluator {
 
         // wait connection has been etablished
         try {
-            latch.await(); // Blocks until latch.countDown() is called
+            response.acquire(); // Blocks until response is released
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -115,7 +117,7 @@ public class PongEvaluator extends GRNGenomeEvaluator {
         // reset the environment
         try {
             String json = objectMapper.writeValueAsString(resetCmd);
-            System.out.println("reset cmd send : " + resetCmd);
+            if (debug) {System.out.println("reset cmd send : " + resetCmd);}
             cc.send(json);
         }catch (IOException e) {
             
@@ -124,12 +126,15 @@ public class PongEvaluator extends GRNGenomeEvaluator {
 
         // Wait for the response
         try {
-            latch.await(); // Blocks until latch.countDown() is called
+            if (debug) {System.out.println("waiting response reset ");}
+            response.acquire(); // Blocks until latch.countDown() is called
+           
         } catch (InterruptedException e) {
+            if (debug) {System.out.println("waiting response reset error ");}
             e.printStackTrace();
         }
 
-        System.out.println("reply after reset : " + reply);
+        if (debug) {System.out.println("reply after reset : " + reply);}
         // read obs after reset 
         try {
 
@@ -140,7 +145,8 @@ public class PongEvaluator extends GRNGenomeEvaluator {
             truncated = (Boolean) map.get("truncated");
             terminated = (Boolean) map.get("terminated");
         } catch (Exception e) {
-            System.err.println("error read reply");
+            if (debug) {System.out.println("reply reset error " + reply);}
+            if (debug) {System.err.println("error read reply");}
             e.printStackTrace();
         }
 
@@ -159,13 +165,13 @@ public class PongEvaluator extends GRNGenomeEvaluator {
 
             // Wait for the response
             try {
-                latch.await(); // Blocks until latch.countDown() is called
+                response.acquire(); // Blocks until latch.countDown() is called
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
 
             // read reply
-            System.out.println("step reply" + reply);    
+            System.out.println("reward_ts : " + reward_ts  + "rewards_ep : " +  reward_ep );    
             try {
 
                 HashMap<String, Object> map = objectMapper.readValue(reply, HashMap.class);
@@ -180,14 +186,23 @@ public class PongEvaluator extends GRNGenomeEvaluator {
                     break;
                 }
             } catch (Exception e) {
+                System.out.println("reply step error " + reply);
                 System.err.println("error read reply");
                 e.printStackTrace();
             }
 
             reward_ep += reward_ts;
-            // TODO succeed to have -34 should no thappend check 
+            System.out.println("log line : "+ i + " current reward" + reward_ep + " reply : " + reply );
 
         }
+
+        // close the connecction 
+        try {
+            cc.send(objectMapper.writeValueAsString(endCmd));
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+
         cc.close();
         return reward_ep;
     }
