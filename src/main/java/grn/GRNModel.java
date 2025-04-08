@@ -7,20 +7,22 @@ import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Random;
 import java.util.Vector;
+import java.io.File;
+import java.io.FileWriter;
 
 
 public class GRNModel implements Serializable {
 	private static final long serialVersionUID = 1L;
 
-	double beta;
-	double delta;
+	public double beta;
+	public double delta;
 	int currentStep;
 	double maxEnhance;
 	double maxInhibit;
 	double enhanceMatching[][];
 	double inhibitMatching[][];
 
-	public Vector<GRNProtein> proteins;
+	public  Vector<GRNProtein> proteins;
 
 	public GRNModel(Vector<GRNProtein> p, double b, double d) {
 		proteins=p;
@@ -171,7 +173,7 @@ public class GRNModel implements Serializable {
 	}
 
 
-	private void updateSignatures() {
+	public void updateSignatures() {
 		// calculating signatures
 		enhanceMatching = new double[proteins.size()][proteins.size()];
 		inhibitMatching = new double[proteins.size()][proteins.size()];
@@ -286,25 +288,26 @@ public class GRNModel implements Serializable {
 	}
 	
 
+
 	static public void main(String args[]) {
-		/* For compiling a JAR that outputs the distance between 2 genomes */
+		String path = "CoverageControl/run_10903935734689/grn_199_-6.495133503044914.grn";
+		String folderPath = path.substring(0, path.lastIndexOf('/'));
+	
 		try {
-			GRNModel g1 = GRNModel.loadFromFile( args[0] );
-			GRNModel g2 = GRNModel.loadFromFile( args[1] );
-		
-			boolean compDynamicsCoef = Boolean.parseBoolean( args[2] );
-			double protCoef = Double.parseDouble( args[3] );
-			double enhCoef  = Double.parseDouble( args[4] );
-			double inhCoef  = Double.parseDouble( args[5] );
-			double betaMax  = Double.parseDouble( args[6] );
-			double betaMin  = Double.parseDouble( args[7] );
-			double deltaMax  = Double.parseDouble( args[8] );
-			double deltaMin  = Double.parseDouble( args[9] );
+			GRNModel g = GRNModel.loadFromFile(path);
+			String res = g.toString();
+			res += "|" + g.beta + "|" + g.delta;
+			System.out.println(res);
+	
+			File file = new File(folderPath+"/grnString.txt");
+			FileWriter fw = new FileWriter(file);
+			fw.write(res);
+			fw.close();
 			
-			System.out.println( g1.distanceTo( g2, compDynamicsCoef, protCoef, enhCoef, inhCoef, betaMax, betaMin, deltaMax, deltaMin ) );
 		} catch (Exception e) {
+			// Handle the exception, for example:
 			e.printStackTrace();
 		}
-	}	
 
+	}
 }
