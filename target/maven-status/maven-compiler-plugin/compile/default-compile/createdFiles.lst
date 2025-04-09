@@ -21,6 +21,7 @@ operators/GRNAligningCrossoverOperator.class
 operators/GRNCrossoverOperator.class
 evaluators/PongEvaluator.class
 operators/GRNDeleteGeneMutationOperator.class
+evaluators/Regressor.class
 operators/GRNMutationOperator.class
 operators/GRNAligningCrossoverOperator_v1b.class
 evolver/Species$GRNGenomeFitnessComparator.class
@@ -29,5 +30,6 @@ evaluators/IntertwinedSpiralsVariableTime.class
 evolver/Evolver.class
 operators/GRNOnePointCrossoverOperator.class
 evaluators/DoublingFrequencyEvaluator.class
+evaluators/Regressor$1.class
 evolver/Species.class
 grn/GRNProtein.class

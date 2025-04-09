@@ -7,14 +7,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
-
-import evaluators.GRNGenomeEvaluator;
-import evaluators.IntertwinedSpiralsSubsequence;
-import evaluators.IntertwinedSpiralsVariableTime;
-import evaluators.DoublingFrequencyEvaluator;
-import evaluators.LowPassFilterEvaluator;
-import evaluators.CoverageControl;
-import evaluators.IntertwinedSpirals;
+import evaluators.*;
 import grn.GRNProtein;
 import operators.GRNAddGeneMutationOperator;
 import operators.GRNAligningCrossoverOperator_ParentCountProb;
@@ -39,7 +32,7 @@ public class Evolver {
 
 	public Random rng;
 	public int randomSeed=(int)(new Date().getTime());
-	public int maxNumGen=Integer.MAX_VALUE;
+	public int maxNumGen=100;
 	public GRNGenomeEvaluator evaluator=null;
 	public int populationSize = 500;
 	public double speciationThreshold = 0.15;
@@ -665,8 +658,9 @@ public class Evolver {
 		//e.greatActivated=false;
 		
 		if (!customExpName) {
-			e.evaluator=new CoverageControl( args, e.rng );//new MichalSignalProcessExp3();
+			// e.evaluator=new CoverageControl( args, e.rng );//new MichalSignalProcessExp3();
 			//e.evaluator = new IntertwinedSpirals( args );
+			e.evaluator = new Regressor();
 			e.experienceName=e.evaluator.name;
 		} else {
 			if( e.experienceName.compareTo("DoublingFrequencyEvaluator") == 0) e.evaluator=new DoublingFrequencyEvaluator();  
