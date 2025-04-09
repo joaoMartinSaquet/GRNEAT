@@ -101,8 +101,10 @@ if __name__ == "__main__":
     server.start_server()
 ```
 
-
-when it's done, you need to start first the python server that will initialize every things and load data, or run env for RL task. then launch the mvn project
+be sure that num output are consistant on both sides
+to launch the evolution :
+    -  first launch the python server that will initialize every things and load data, or run env for RL task. 
+    -  second launch the mvn project to start java client
 
 
 Launch the python server
